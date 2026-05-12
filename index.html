@@ -733,10 +733,15 @@ function getFiltered() {
 
   // Vendor filter
   if (currentVendor === 'giovana') {
-    data = data.filter(r => (r[COL.criadoPor] || '').toLowerCase().includes('giovana') ||
-                             (r[COL.criadoPor] || '').toLowerCase().includes('comercial'));
+    data = data.filter(r => {
+      const p = (r[COL.criadoPor] || '').toLowerCase();
+      return p.includes('giovana') || p.includes('comercial') || p.includes('gonçalves') || p.includes('goncalves');
+    });
   } else if (currentVendor === 'lucas') {
-    data = data.filter(r => (r[COL.criadoPor] || '').toLowerCase().includes('lucas'));
+    data = data.filter(r => {
+      const p = (r[COL.criadoPor] || '').toLowerCase();
+      return p.includes('lucas') || p.includes('tomassoni');
+    });
   }
 
   // Period filter
@@ -760,6 +765,11 @@ function getFiltered() {
 
 function parseDate(str) {
   if (!str) return null;
+  // Support DD/MM/YYYY
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(str.trim())) {
+    const [day, month, year] = str.trim().split('/');
+    return new Date(parseInt(year), parseInt(month)-1, parseInt(day));
+  }
   const d = new Date(str);
   return isNaN(d) ? null : d;
 }
@@ -878,9 +888,10 @@ function getWeekLabel(d) {
 function renderChartVendedores() {
   destroyChart('vendedores');
 
-  const gData = allData.filter(r => (r[COL.criadoPor]||'').toLowerCase().includes('giovana') ||
-                                     (r[COL.criadoPor]||'').toLowerCase().includes('comercial'));
-  const lData = allData.filter(r => (r[COL.criadoPor]||'').toLowerCase().includes('lucas'));
+  const gFilter = r => { const p=(r[COL.criadoPor]||'').toLowerCase(); return p.includes('giovana')||p.includes('comercial')||p.includes('gonçalves')||p.includes('goncalves'); };
+  const lFilter = r => { const p=(r[COL.criadoPor]||'').toLowerCase(); return p.includes('lucas')||p.includes('tomassoni'); };
+  const gData = allData.filter(gFilter);
+  const lData = allData.filter(lFilter);
 
   const sum = (arr, k) => arr.reduce((a, r) => a + toNum(r[k]), 0);
 
@@ -916,14 +927,21 @@ function renderChartVendedores() {
 // ── Funil ──────────────────────────────────────────────────────────────────
 function renderFunil(data) {
   const sum = k => data.reduce((a, r) => a + toNum(r[k]), 0);
+  const tentativas = sum(COL.tentativas);
+  const leadsCont  = sum(COL.leadsCont);
+  const negoc      = sum(COL.negociacoes);
+  const props      = sum(COL.propostas);
+  // Use leadsCont as top of funnel if tentativas is empty/zero
+  const topFunil   = tentativas > 0 ? tentativas : (leadsCont > 0 ? leadsCont : props);
+
   const steps = [
-    { label: 'Prospecções',   val: sum(COL.tentativas),  color: '#6c63ff' },
-    { label: 'Leads contato', val: sum(COL.leadsCont),   color: '#8b5cf6' },
-    { label: 'Negociações',   val: sum(COL.negociacoes), color: '#a78bfa' },
-    { label: 'Propostas',     val: sum(COL.propostas),   color: '#c4b5fd' },
+    { label: 'Prospecções',   val: tentativas || topFunil, color: '#6c63ff' },
+    { label: 'Leads contato', val: Math.min(leadsCont, topFunil), color: '#8b5cf6' },
+    { label: 'Negociações',   val: Math.min(negoc, topFunil),     color: '#a78bfa' },
+    { label: 'Propostas',     val: Math.min(props, topFunil),     color: '#c4b5fd' },
   ];
 
-  const max = Math.max(...steps.map(s => s.val), 1);
+  const max = Math.max(steps[0].val, 1);
   const el  = document.getElementById('funil');
   el.innerHTML = steps.map(s => `
     <div class="funil-step">
@@ -933,7 +951,7 @@ function renderFunil(data) {
           <span class="funil-num">${s.val}</span>
         </div>
       </div>
-      <div class="funil-pct">${max ? Math.round((s.val/steps[0].val)*100) : 0}%</div>
+      <div class="funil-pct">${steps[0].val ? Math.round((s.val/steps[0].val)*100) : 0}%</div>
     </div>
   `).join('');
 }
@@ -974,9 +992,10 @@ function renderChartProdutos(data) {
 
 // ── Ranking ────────────────────────────────────────────────────────────────
 function renderRanking() {
-  const gData = allData.filter(r => (r[COL.criadoPor]||'').toLowerCase().includes('giovana') ||
-                                     (r[COL.criadoPor]||'').toLowerCase().includes('comercial'));
-  const lData = allData.filter(r => (r[COL.criadoPor]||'').toLowerCase().includes('lucas'));
+  const gFilter = r => { const p=(r[COL.criadoPor]||'').toLowerCase(); return p.includes('giovana')||p.includes('comercial')||p.includes('gonçalves')||p.includes('goncalves'); };
+  const lFilter = r => { const p=(r[COL.criadoPor]||'').toLowerCase(); return p.includes('lucas')||p.includes('tomassoni'); };
+  const gData = allData.filter(gFilter);
+  const lData = allData.filter(lFilter);
 
   const score = arr => arr.reduce((a, r) => a + toNum(r[COL.propostas]), 0);
   const gScore = score(gData);

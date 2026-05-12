@@ -518,10 +518,14 @@
       <h1>Dashboard <span>Comercial</span></h1>
     </div>
     <div class="header-right">
-      <div class="period-selector">
-        <button class="period-btn active" onclick="setPeriod('month', this)">Mês</button>
-        <button class="period-btn" onclick="setPeriod('week', this)">Semana</button>
-        <button class="period-btn" onclick="setPeriod('all', this)">Tudo</button>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <select id="monthSelect" onchange="setMonth(this.value)" style="font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;background:#18181f;color:#8888aa;border:1px solid #22222e;border-radius:10px;cursor:pointer;outline:none;">
+          <option value="all">Todos os meses</option>
+        </select>
+        <div class="period-selector">
+          <button class="period-btn active" onclick="setPeriod('week', this)">Semana</button>
+          <button class="period-btn" onclick="setPeriod('all', this)">Tudo</button>
+        </div>
       </div>
       <span class="last-update" id="lastUpdate">Nenhum dado carregado</span>
       <div class="csv-input-bar">
@@ -633,6 +637,7 @@
 // ── State ──────────────────────────────────────────────────────────────────
 let allData = [];
 let currentPeriod = 'month';
+let currentMonth = 'all';
 let currentVendor = 'all';
 let charts = {};
 
@@ -659,16 +664,42 @@ const COL = {
 function loadCSV() {
   const url = document.getElementById('csvUrl').value.trim();
   if (!url) { alert('Cole o link CSV do Google Sheets.'); return; }
-
-  fetch(url)
-    .then(r => r.text())
+  document.getElementById('lastUpdate').textContent = 'Carregando...';
+  const proxy = 'https://corsproxy.io/?' + encodeURIComponent(url);
+  const tryLoad = (src) => fetch(src).then(r => { if (!r.ok) throw new Error(); return r.text(); });
+  tryLoad(proxy)
+    .catch(() => tryLoad(url))
     .then(csv => {
       allData = parseCSV(csv);
-      document.getElementById('lastUpdate').textContent =
-        'Atualizado: ' + new Date().toLocaleString('pt-BR');
+      if (!allData.length) { document.getElementById('lastUpdate').textContent = 'Nenhum dado encontrado'; return; }
+      document.getElementById('lastUpdate').textContent = 'Atualizado: ' + new Date().toLocaleString('pt-BR');
+      populateMonthFilter();
       renderAll();
     })
-    .catch(() => alert('Erro ao carregar. Verifique se o link CSV está correto e a planilha está publicada.'));
+    .catch(() => {
+      document.getElementById('lastUpdate').textContent = 'Erro ao carregar';
+      alert('Não foi possível carregar.\n\nVerifique:\n1. A planilha está publicada como CSV\n2. O link está correto');
+    });
+}
+
+function populateMonthFilter() {
+  const months = {};
+  allData.forEach(r => {
+    const d = parseDate(r[COL.data]);
+    if (!d) return;
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    const label = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    months[key] = label.charAt(0).toUpperCase() + label.slice(1);
+  });
+  const sel = document.getElementById('monthSelect');
+  sel.innerHTML = '<option value="all">Todos os meses</option>';
+  Object.keys(months).sort().reverse().forEach(k => {
+    sel.innerHTML += '<option value="' + k + '">' + months[k] + '</option>';
+  });
+  const now = new Date();
+  const curKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  sel.value = months[curKey] ? curKey : Object.keys(months).sort().reverse()[0] || 'all';
+  currentMonth = sel.value;
 }
 
 function parseCSV(text) {
@@ -689,6 +720,16 @@ function toNum(v) { return parseFloat((v || '0').replace(',', '.')) || 0; }
 // ── Filters ────────────────────────────────────────────────────────────────
 function getFiltered() {
   let data = [...allData];
+
+  // Month filter
+  if (currentMonth !== 'all') {
+    data = data.filter(r => {
+      const d = parseDate(r[COL.data]);
+      if (!d) return false;
+      const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+      return key === currentMonth;
+    });
+  }
 
   // Vendor filter
   if (currentVendor === 'giovana') {
@@ -723,8 +764,17 @@ function parseDate(str) {
   return isNaN(d) ? null : d;
 }
 
+function setMonth(val) {
+  currentMonth = val;
+  currentPeriod = 'all'; // reset period filter when month is selected
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  renderAll();
+}
+
 function setPeriod(p, btn) {
   currentPeriod = p;
+  currentMonth = 'all'; // reset month when period is selected
+  document.getElementById('monthSelect').value = 'all';
   document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   renderAll();

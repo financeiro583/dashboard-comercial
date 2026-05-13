@@ -515,6 +515,7 @@
   <header>
     <div class="brand">
       <span class="brand-tag">Vektor Fitness · Comercial</span>
+    <span style="font-family:'DM Mono',monospace;font-size:9px;color:#333355;margin-top:2px;">v1.4</span>
       <h1>Dashboard <span>Comercial</span></h1>
     </div>
     <div class="header-right">
@@ -688,20 +689,45 @@ function loadCSV() {
   const url = document.getElementById('csvUrl').value.trim();
   if (!url) { alert('Cole o link CSV do Google Sheets.'); return; }
   document.getElementById('lastUpdate').textContent = 'Carregando...';
-  const proxy = 'https://corsproxy.io/?' + encodeURIComponent(url);
-  const tryLoad = (src) => fetch(src).then(r => { if (!r.ok) throw new Error(); return r.text(); });
-  tryLoad(proxy)
-    .catch(() => tryLoad(url))
+
+  // Extract sheet ID from URL — works with both /pub and /edit URLs
+  const idMatch = url.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  const pubMatch = url.match(/spreadsheets\/d\/e\/([a-zA-Z0-9-_]+)/);
+
+  // Build multiple fallback URLs
+  const proxies = [
+    'https://corsproxy.io/?' + encodeURIComponent(url),
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
+    'https://cors.sh/' + url,
+  ];
+
+  const tryFetch = (urls) => {
+    const [first, ...rest] = urls;
+    if (!first) return Promise.reject(new Error('all failed'));
+    return fetch(first)
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+      .catch(() => rest.length ? tryFetch(rest) : Promise.reject(new Error('all failed')));
+  };
+
+  tryFetch(proxies)
     .then(csv => {
+      if (!csv || csv.trim().startsWith('<')) throw new Error('not csv');
       allData = parseCSV(csv);
-      if (!allData.length) { document.getElementById('lastUpdate').textContent = 'Nenhum dado encontrado'; return; }
+      if (!allData.length) {
+        document.getElementById('lastUpdate').textContent = 'Nenhum dado encontrado';
+        document.getElementById('debugBox').textContent = 'CSV carregado mas sem linhas de dados. Verifique se a planilha tem dados.';
+        document.getElementById('debugBox').style.display = 'block';
+        return;
+      }
       document.getElementById('lastUpdate').textContent = 'Atualizado: ' + new Date().toLocaleString('pt-BR');
+      document.getElementById('debugBox').style.display = 'none';
       populateMonthFilter();
       renderAll();
     })
-    .catch(() => {
+    .catch(err => {
       document.getElementById('lastUpdate').textContent = 'Erro ao carregar';
-      alert('Não foi possível carregar.\n\nVerifique:\n1. A planilha está publicada como CSV\n2. O link está correto');
+      document.getElementById('debugBox').textContent = 'Erro: ' + err.message + '\n\nTente:\n1. Abrir a URL do CSV direto no navegador e ver se carrega\n2. Republicar a planilha (Arquivo → Publicar na web → Republicar)';
+      document.getElementById('debugBox').style.display = 'block';
     });
 }
 

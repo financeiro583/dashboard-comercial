@@ -515,7 +515,7 @@
   <header>
     <div class="brand">
       <span class="brand-tag">Vektor Fitness · Comercial</span>
-    <span style="font-family:'DM Mono',monospace;font-size:9px;color:#333355;margin-top:2px;">v1.4</span>
+    <span style="font-family:'DM Mono',monospace;font-size:9px;color:#6c63ff;margin-top:2px;">v1.5</span>
       <h1>Dashboard <span>Comercial</span></h1>
     </div>
     <div class="header-right">
@@ -535,6 +535,8 @@
       </div>
     </div>
   </header>
+
+  <pre id="debugBox" style="display:none;background:#0a0a0f;color:#43e97b;font-size:10px;padding:16px;border-radius:12px;margin-bottom:16px;border:1px solid #22222e;white-space:pre-wrap;max-height:220px;overflow:auto;"></pre>
 
   <!-- Vendor filter -->
   <div class="vendor-filter">
@@ -635,6 +637,14 @@
 </div>
 
 <script>
+// ── Safe DOM helper ──────────────────────────────────────────────────────
+function setDebug(msg, show=true) {
+  const el = document.getElementById('debugBox');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = show ? 'block' : 'none';
+}
+
 // ── State ──────────────────────────────────────────────────────────────────
 let allData = [];
 let currentPeriod = 'month';
@@ -715,19 +725,17 @@ function loadCSV() {
       allData = parseCSV(csv);
       if (!allData.length) {
         document.getElementById('lastUpdate').textContent = 'Nenhum dado encontrado';
-        document.getElementById('debugBox').textContent = 'CSV carregado mas sem linhas de dados. Verifique se a planilha tem dados.';
-        document.getElementById('debugBox').style.display = 'block';
+        setDebug('CSV carregado mas sem dados. Verifique se a planilha tem dados.');
         return;
       }
       document.getElementById('lastUpdate').textContent = 'Atualizado: ' + new Date().toLocaleString('pt-BR');
-      document.getElementById('debugBox').style.display = 'none';
+      setDebug('', false);
       populateMonthFilter();
       renderAll();
     })
     .catch(err => {
       document.getElementById('lastUpdate').textContent = 'Erro ao carregar';
-      document.getElementById('debugBox').textContent = 'Erro: ' + err.message + '\n\nTente:\n1. Abrir a URL do CSV direto no navegador e ver se carrega\n2. Republicar a planilha (Arquivo → Publicar na web → Republicar)';
-      document.getElementById('debugBox').style.display = 'block';
+      setDebug('Erro: ' + err.message + '\n\nTente:\n1. Abrir a URL do CSV no navegador e ver se carrega\n2. Republicar a planilha (Arquivo → Publicar na web → Republicar)');
     });
 }
 
@@ -758,8 +766,7 @@ function parseCSV(text) {
   // DEBUG — remove after fixing
   const debugInfo = 'Headers encontrados:\n' + headers.join('\n') + '\n\nMapeamento:\n' + JSON.stringify(COL, null, 2);
   console.log(debugInfo);
-  document.getElementById('debugBox').textContent = debugInfo;
-  document.getElementById('debugBox').style.display = 'block';
+  setDebug(debugInfo);
   return lines.slice(1).map(line => {
     const vals = splitCSVLine(line);
     const obj = {};

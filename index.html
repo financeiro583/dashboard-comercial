@@ -7,1116 +7,477 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0a0a0f;
-    --bg2: #111118;
-    --bg3: #18181f;
-    --border: #22222e;
-    --accent: #6c63ff;
-    --accent2: #ff6584;
-    --accent3: #43e97b;
-    --text: #e8e8f0;
-    --text2: #8888aa;
-    --text3: #555570;
-    --giovana: #6c63ff;
-    --lucas: #ff6584;
-    --card-r: 16px;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Syne', sans-serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* ── Grid bg ── */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(var(--border) 1px, transparent 1px),
-      linear-gradient(90deg, var(--border) 1px, transparent 1px);
-    background-size: 40px 40px;
-    opacity: 0.3;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .wrapper {
-    position: relative;
-    z-index: 1;
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 40px 32px;
-  }
-
-  /* ── Header ── */
-  header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom: 48px;
-    gap: 24px;
-    flex-wrap: wrap;
-  }
-
-  .brand {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .brand-tag {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--accent);
-    letter-spacing: 3px;
-    text-transform: uppercase;
-  }
-
-  h1 {
-    font-size: clamp(28px, 4vw, 48px);
-    font-weight: 800;
-    line-height: 1;
-    color: var(--text);
-  }
-
-  h1 span { color: var(--accent); }
-
-  .header-right {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 8px;
-  }
-
-  .period-selector {
-    display: flex;
-    gap: 4px;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 4px;
-  }
-
-  .period-btn {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    padding: 6px 14px;
-    border: none;
-    background: transparent;
-    color: var(--text2);
-    border-radius: 7px;
-    cursor: pointer;
-    transition: all 0.2s;
-    letter-spacing: 1px;
-  }
-
-  .period-btn.active {
-    background: var(--accent);
-    color: white;
-  }
-
-  .last-update {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--text3);
-  }
-
-  .csv-input-bar {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 8px 14px;
-    width: 100%;
-    max-width: 500px;
-  }
-
-  .csv-input-bar input {
-    flex: 1;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: var(--text2);
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-  }
-
-  .csv-input-bar input::placeholder { color: var(--text3); }
-
-  .csv-btn {
-    font-family: 'Syne', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 6px 14px;
-    background: var(--accent);
-    color: white;
-    border: none;
-    border-radius: 7px;
-    cursor: pointer;
-    transition: opacity 0.2s;
-    white-space: nowrap;
-  }
-
-  .csv-btn:hover { opacity: 0.85; }
-
-  /* ── Vendor filter ── */
-  .vendor-filter {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 32px;
-    flex-wrap: wrap;
-  }
-
-  .vendor-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
-    border-radius: 100px;
-    border: 1px solid var(--border);
-    background: var(--bg3);
-    color: var(--text2);
-    font-family: 'Syne', sans-serif;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .vendor-btn .dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-  }
-
-  .vendor-btn.active-all { border-color: var(--accent); color: var(--text); background: rgba(108,99,255,0.12); }
-  .vendor-btn.active-g { border-color: var(--giovana); color: var(--text); background: rgba(108,99,255,0.12); }
-  .vendor-btn.active-l { border-color: var(--lucas); color: var(--text); background: rgba(255,101,132,0.12); }
-
-  /* ── KPI grid ── */
-  .kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-    margin-bottom: 32px;
-  }
-
-  .kpi-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: var(--card-r);
-    padding: 24px;
-    position: relative;
-    overflow: hidden;
-    transition: border-color 0.2s;
-  }
-
-  .kpi-card:hover { border-color: var(--accent); }
-
-  .kpi-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: var(--accent);
-    opacity: 0;
-    transition: opacity 0.2s;
-  }
-
-  .kpi-card:hover::before { opacity: 1; }
-
-  .kpi-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--text3);
-    margin-bottom: 12px;
-  }
-
-  .kpi-value {
-    font-size: 36px;
-    font-weight: 800;
-    color: var(--text);
-    line-height: 1;
-    margin-bottom: 8px;
-  }
-
-  .kpi-sub {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--text3);
-  }
-
-  .kpi-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    padding: 3px 8px;
-    border-radius: 100px;
-    margin-top: 8px;
-  }
-
-  .badge-green { background: rgba(67,233,123,0.12); color: var(--accent3); }
-  .badge-red { background: rgba(255,101,132,0.12); color: var(--accent2); }
-  .badge-gray { background: rgba(136,136,170,0.12); color: var(--text2); }
-
-  /* ── Charts grid ── */
-  .charts-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 16px;
-  }
-
-  .charts-grid-3 {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 16px;
-  }
-
-  .chart-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: var(--card-r);
-    padding: 24px;
-  }
-
-  .chart-card.full { grid-column: 1 / -1; }
-
-  .chart-title {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--text3);
-    margin-bottom: 4px;
-  }
-
-  .chart-subtitle {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 20px;
-  }
-
-  .chart-wrap {
-    position: relative;
-    height: 220px;
-  }
-
-  .chart-wrap-sm {
-    position: relative;
-    height: 180px;
-  }
-
-  /* ── Funil ── */
-  .funil {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .funil-step {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .funil-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--text2);
-    width: 160px;
-    flex-shrink: 0;
-  }
-
-  .funil-bar-wrap {
-    flex: 1;
-    height: 28px;
-    background: var(--bg3);
-    border-radius: 6px;
-    overflow: hidden;
-    position: relative;
-  }
-
-  .funil-bar {
-    height: 100%;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    padding: 0 10px;
-    transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-    min-width: 40px;
-  }
-
-  .funil-num {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    font-weight: 500;
-    color: white;
-  }
-
-  .funil-pct {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--text3);
-    width: 40px;
-    text-align: right;
-    flex-shrink: 0;
-  }
-
-  /* ── Ranking ── */
-  .ranking {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .rank-item {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 16px;
-    background: var(--bg3);
-    border-radius: 12px;
-    border: 1px solid var(--border);
-  }
-
-  .rank-pos {
-    font-size: 24px;
-    font-weight: 800;
-    width: 32px;
-    flex-shrink: 0;
-  }
-
-  .rank-info { flex: 1; }
-
-  .rank-name {
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 4px;
-  }
-
-  .rank-stats {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--text3);
-  }
-
-  .rank-score {
-    font-size: 28px;
-    font-weight: 800;
-  }
-
-  /* ── Motivos ── */
-  .motivos-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .motivo-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .motivo-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--text2);
-    width: 180px;
-    flex-shrink: 0;
-  }
-
-  .motivo-bar-wrap {
-    flex: 1;
-    height: 20px;
-    background: var(--bg3);
-    border-radius: 4px;
-    overflow: hidden;
-  }
-
-  .motivo-bar {
-    height: 100%;
-    background: var(--accent2);
-    border-radius: 4px;
-    transition: width 0.6s ease;
-    opacity: 0.7;
-  }
-
-  .motivo-num {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--text3);
-    width: 24px;
-    text-align: right;
-  }
-
-  /* ── Empty state ── */
-  .empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 200px;
-    gap: 12px;
-    color: var(--text3);
-  }
-
-  .empty-icon { font-size: 32px; }
-  .empty-text { font-family: 'DM Mono', monospace; font-size: 12px; text-align: center; line-height: 1.6; }
-
-  /* ── Responsive ── */
-  @media (max-width: 900px) {
-    .charts-grid, .charts-grid-3 { grid-template-columns: 1fr; }
-    .chart-card.full { grid-column: 1; }
-  }
-
-  @media (max-width: 600px) {
-    .wrapper { padding: 24px 16px; }
-    .kpi-grid { grid-template-columns: 1fr 1fr; }
-  }
-
-  /* ── Animations ── */
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .kpi-card, .chart-card {
-    animation: fadeUp 0.4s ease both;
-  }
-
-  .kpi-card:nth-child(1) { animation-delay: 0.05s; }
-  .kpi-card:nth-child(2) { animation-delay: 0.1s; }
-  .kpi-card:nth-child(3) { animation-delay: 0.15s; }
-  .kpi-card:nth-child(4) { animation-delay: 0.2s; }
-  .kpi-card:nth-child(5) { animation-delay: 0.25s; }
+:root {
+  --bg:      #0a0a0f;
+  --bg2:     #111118;
+  --bg3:     #18181f;
+  --border:  #22222e;
+  --accent:  #6c63ff;
+  --green:   #43e97b;
+  --red:     #ff6584;
+  --text:    #e8e8f0;
+  --text2:   #8888aa;
+  --text3:   #44445a;
+  --radius:  14px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:'Syne',sans-serif; min-height:100vh; }
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image: linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:40px 40px; opacity:.25;
+}
+.wrap { position:relative; z-index:1; max-width:1300px; margin:0 auto; padding:36px 28px; }
+
+/* ── Header ── */
+header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:40px; gap:20px; flex-wrap:wrap; }
+.brand-tag { font-family:'DM Mono',monospace; font-size:10px; color:var(--accent); letter-spacing:3px; text-transform:uppercase; }
+.brand-ver { font-family:'DM Mono',monospace; font-size:9px; color:var(--accent); margin-top:3px; }
+h1 { font-size:clamp(26px,4vw,44px); font-weight:800; line-height:1; }
+h1 span { color:var(--accent); }
+
+/* ── Upload button ── */
+.upload-btn {
+  display:inline-flex; align-items:center; gap:8px;
+  padding:10px 20px; background:var(--accent); color:#fff;
+  font-family:'Syne',sans-serif; font-size:13px; font-weight:700;
+  border-radius:10px; cursor:pointer; border:none; transition:opacity .2s;
+}
+.upload-btn:hover { opacity:.85; }
+.upload-btn input { display:none; }
+.last-update { font-family:'DM Mono',monospace; font-size:10px; color:var(--text3); margin-top:6px; }
+
+/* ── Filters ── */
+.filters { display:flex; align-items:center; gap:10px; margin-bottom:28px; flex-wrap:wrap; }
+.filter-label { font-family:'DM Mono',monospace; font-size:10px; color:var(--text3); letter-spacing:2px; text-transform:uppercase; margin-right:4px; }
+.chip { padding:8px 18px; border-radius:100px; border:1px solid var(--border); background:var(--bg3); color:var(--text2); font-family:'Syne',sans-serif; font-size:12px; font-weight:600; cursor:pointer; transition:all .2s; display:flex; align-items:center; gap:6px; }
+.chip .dot { width:7px; height:7px; border-radius:50%; }
+.chip.on-all  { border-color:var(--accent); color:var(--text); background:rgba(108,99,255,.12); }
+.chip.on-g    { border-color:#6c63ff; color:var(--text); background:rgba(108,99,255,.12); }
+.chip.on-l    { border-color:var(--red); color:var(--text); background:rgba(255,101,132,.12); }
+.divider { width:1px; height:24px; background:var(--border); }
+select.chip { outline:none; cursor:pointer; }
+
+/* ── KPI grid ── */
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; margin-bottom:24px; }
+.kpi { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:22px; transition:border-color .2s; }
+.kpi:hover { border-color:var(--accent); }
+.kpi-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--text3); margin-bottom:10px; }
+.kpi-val { font-size:38px; font-weight:800; line-height:1; color:var(--text); }
+.kpi-sub { font-family:'DM Mono',monospace; font-size:10px; color:var(--text3); margin-top:6px; }
+
+/* ── Charts ── */
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+.grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:14px; }
+.card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:22px; }
+.card-label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--text3); margin-bottom:3px; }
+.card-title { font-size:15px; font-weight:700; color:var(--text); margin-bottom:18px; }
+.chart-wrap { position:relative; height:210px; }
+
+/* ── Funil ── */
+.funil { display:flex; flex-direction:column; gap:10px; margin-top:4px; }
+.fstep { display:flex; align-items:center; gap:10px; }
+.flabel { font-family:'DM Mono',monospace; font-size:10px; color:var(--text2); width:150px; flex-shrink:0; }
+.fbar-wrap { flex:1; height:26px; background:var(--bg3); border-radius:6px; overflow:hidden; }
+.fbar { height:100%; border-radius:6px; display:flex; align-items:center; padding:0 10px; min-width:36px; transition:width .7s cubic-bezier(.34,1.56,.64,1); }
+.fnum { font-family:'DM Mono',monospace; font-size:11px; color:#fff; }
+.fpct { font-family:'DM Mono',monospace; font-size:10px; color:var(--text3); width:42px; text-align:right; flex-shrink:0; }
+
+/* ── Ranking ── */
+.rank-list { display:flex; flex-direction:column; gap:10px; margin-top:4px; }
+.rank-item { display:flex; align-items:center; gap:14px; padding:14px; background:var(--bg3); border:1px solid var(--border); border-radius:10px; }
+.rank-medal { font-size:22px; width:28px; flex-shrink:0; }
+.rank-info { flex:1; }
+.rank-name { font-size:13px; font-weight:700; }
+.rank-stats { font-family:'DM Mono',monospace; font-size:10px; color:var(--text3); margin-top:3px; }
+.rank-score { font-size:26px; font-weight:800; }
+
+/* ── Empty ── */
+.empty { display:flex; flex-direction:column; align-items:center; justify-content:center; height:180px; color:var(--text3); gap:10px; }
+.empty-icon { font-size:28px; }
+.empty-txt { font-family:'DM Mono',monospace; font-size:11px; text-align:center; line-height:1.6; }
+
+/* ── Debug ── */
+#debug { display:none; background:#0a0a0f; color:var(--green); font-family:'DM Mono',monospace; font-size:10px; padding:14px; border-radius:10px; border:1px solid var(--border); margin-bottom:20px; white-space:pre-wrap; max-height:180px; overflow:auto; }
+
+@media(max-width:900px){ .grid2,.grid3{ grid-template-columns:1fr; } }
+@media(max-width:600px){ .wrap{padding:20px 14px;} .kpi-grid{grid-template-columns:1fr 1fr;} }
 </style>
 </head>
 <body>
-<div class="wrapper">
+<div class="wrap">
 
   <!-- Header -->
   <header>
-    <div class="brand">
-      <span class="brand-tag">Vektor Fitness · Comercial</span>
-    <span style="font-family:'DM Mono',monospace;font-size:9px;color:#6c63ff;margin-top:2px;">v1.6</span>
+    <div>
+      <div class="brand-tag">Vektor Fitness · Comercial</div>
+      <div class="brand-ver">v2.0</div>
       <h1>Dashboard <span>Comercial</span></h1>
     </div>
-    <div class="header-right">
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <select id="monthSelect" onchange="setMonth(this.value)" style="font-family:'DM Mono',monospace;font-size:11px;padding:8px 14px;background:#18181f;color:#8888aa;border:1px solid #22222e;border-radius:10px;cursor:pointer;outline:none;">
-          <option value="all">Todos os meses</option>
-        </select>
-        <div class="period-selector">
-          <button class="period-btn active" onclick="setPeriod('week', this)">Semana</button>
-          <button class="period-btn" onclick="setPeriod('all', this)">Tudo</button>
-        </div>
-      </div>
-      <span class="last-update" id="lastUpdate">Nenhum dado carregado</span>
-      <label class="csv-btn" style="cursor:pointer;display:inline-flex;align-items:center;gap:8px;">
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+      <label class="upload-btn">
         📂 Importar CSV
-        <input type="file" id="csvFile" accept=".csv" onchange="loadCSVFile(this)" style="display:none;">
+        <input type="file" accept=".csv" onchange="loadFile(this)">
       </label>
+      <div class="last-update" id="lastUpdate">Nenhum arquivo carregado</div>
     </div>
   </header>
 
-  <pre id="debugBox" style="display:none;background:#0a0a0f;color:#43e97b;font-size:10px;padding:16px;border-radius:12px;margin-bottom:16px;border:1px solid #22222e;white-space:pre-wrap;max-height:220px;overflow:auto;"></pre>
+  <div id="debug"></div>
 
-  <!-- Vendor filter -->
-  <div class="vendor-filter">
-    <button class="vendor-btn active-all" onclick="setVendor('all', this)">
-      <span class="dot" style="background:#6c63ff"></span> Todos
-    </button>
-    <button class="vendor-btn" onclick="setVendor('giovana', this)">
-      <span class="dot" style="background:var(--giovana)"></span> Giovana
-    </button>
-    <button class="vendor-btn" onclick="setVendor('lucas', this)">
-      <span class="dot" style="background:var(--lucas)"></span> Lucas
-    </button>
+  <!-- Filters -->
+  <div class="filters">
+    <span class="filter-label">Vendedor</span>
+    <button class="chip on-all" onclick="setVendor('all',this)"><span class="dot" style="background:var(--accent)"></span>Todos</button>
+    <button class="chip" onclick="setVendor('giovana',this)"><span class="dot" style="background:#6c63ff"></span>Giovana</button>
+    <button class="chip" onclick="setVendor('outros',this)"><span class="dot" style="background:var(--red)"></span>Outros</button>
+    <div class="divider"></div>
+    <span class="filter-label">Mês</span>
+    <select class="chip" id="monthSel" onchange="setMonth(this.value)">
+      <option value="all">Todos</option>
+    </select>
   </div>
 
   <!-- KPIs -->
   <div class="kpi-grid">
-    <div class="kpi-card">
-      <div class="kpi-label">Prospecções</div>
-      <div class="kpi-value" id="kpi-prosp">—</div>
-      <div class="kpi-sub">tentativas no período</div>
+    <div class="kpi"><div class="kpi-label">Reuniões</div><div class="kpi-val" id="k-reunioes">—</div><div class="kpi-sub">participou no período</div></div>
+    <div class="kpi"><div class="kpi-label">Propostas enviadas</div><div class="kpi-val" id="k-propostas">—</div><div class="kpi-sub">no período</div></div>
+    <div class="kpi"><div class="kpi-label">Follow-ups</div><div class="kpi-val" id="k-followup">—</div><div class="kpi-sub">realizados no período</div></div>
+    <div class="kpi"><div class="kpi-label">Novos leads</div><div class="kpi-val" id="k-leads">—</div><div class="kpi-sub">prospectados no período</div></div>
+    <div class="kpi"><div class="kpi-label">Dias ativos</div><div class="kpi-val" id="k-dias">—</div><div class="kpi-sub">registros no período</div></div>
+  </div>
+
+  <!-- Row 1 -->
+  <div class="grid2">
+    <div class="card">
+      <div class="card-label">Evolução</div>
+      <div class="card-title">Propostas por semana</div>
+      <div class="chart-wrap"><canvas id="cPropostas"></canvas></div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Propostas enviadas</div>
-      <div class="kpi-value" id="kpi-prop">—</div>
-      <div class="kpi-sub">no período selecionado</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Follow-ups</div>
-      <div class="kpi-value" id="kpi-follow">—</div>
-      <div class="kpi-sub">realizados no período</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Taxa de conversão</div>
-      <div class="kpi-value" id="kpi-conv">—</div>
-      <div class="kpi-sub">propostas → fechamentos</div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Leads recebidos</div>
-      <div class="kpi-value" id="kpi-leads">—</div>
-      <div class="kpi-sub">novos leads no período</div>
+    <div class="card">
+      <div class="card-label">Comparativo</div>
+      <div class="card-title">Giovana vs Outros</div>
+      <div class="chart-wrap"><canvas id="cComparativo"></canvas></div>
     </div>
   </div>
 
-  <!-- Charts row 1 -->
-  <div class="charts-grid">
-    <div class="chart-card">
-      <div class="chart-title">Evolução</div>
-      <div class="chart-subtitle">Propostas por semana</div>
-      <div class="chart-wrap">
-        <canvas id="chartPropostas"></canvas>
+  <!-- Row 2 -->
+  <div class="grid2">
+    <div class="card">
+      <div class="card-label">Funil</div>
+      <div class="card-title">Jornada do lead</div>
+      <div class="funil" id="funil">
+        <div class="empty"><div class="empty-icon">📊</div><div class="empty-txt">Importe o CSV para<br>visualizar o funil</div></div>
       </div>
     </div>
-    <div class="chart-card">
-      <div class="chart-title">Comparativo</div>
-      <div class="chart-subtitle">Giovana vs Lucas</div>
-      <div class="chart-wrap">
-        <canvas id="chartVendedores"></canvas>
-      </div>
+    <div class="card">
+      <div class="card-label">Produtos</div>
+      <div class="card-title">Contatos por produto</div>
+      <div class="chart-wrap"><canvas id="cProdutos"></canvas></div>
     </div>
   </div>
 
-  <!-- Charts row 2 -->
-  <div class="charts-grid">
-    <div class="chart-card">
-      <div class="chart-title">Funil</div>
-      <div class="chart-subtitle">Jornada do lead</div>
-      <div id="funil" class="funil" style="margin-top:8px">
-        <div class="empty"><div class="empty-icon">📊</div><div class="empty-text">Carregue os dados para<br>visualizar o funil</div></div>
+  <!-- Row 3 -->
+  <div class="grid2">
+    <div class="card">
+      <div class="card-label">Ranking</div>
+      <div class="card-title">Propostas por vendedor</div>
+      <div class="rank-list" id="ranking">
+        <div class="empty"><div class="empty-icon">🏆</div><div class="empty-txt">Importe o CSV para<br>ver o ranking</div></div>
       </div>
     </div>
-    <div class="chart-card">
-      <div class="chart-title">Produtos</div>
-      <div class="chart-subtitle">Contatos por produto</div>
-      <div class="chart-wrap">
-        <canvas id="chartProdutos"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <!-- Charts row 3 -->
-  <div class="charts-grid">
-    <div class="chart-card">
-      <div class="chart-title">Ranking</div>
-      <div class="chart-subtitle">Performance do mês</div>
-      <div class="ranking" id="ranking">
-        <div class="empty"><div class="empty-icon">🏆</div><div class="empty-text">Carregue os dados para<br>ver o ranking</div></div>
-      </div>
-    </div>
-    <div class="chart-card">
-      <div class="chart-title">Prospecção</div>
-      <div class="chart-subtitle">Evolução diária</div>
-      <div class="chart-wrap">
-        <canvas id="chartProspeccao"></canvas>
-      </div>
+    <div class="card">
+      <div class="card-label">Tendência</div>
+      <div class="card-title">Follow-ups por dia</div>
+      <div class="chart-wrap"><canvas id="cFollowup"></canvas></div>
     </div>
   </div>
 
 </div>
 
 <script>
-// ── Safe DOM helper ──────────────────────────────────────────────────────
-function setDebug(msg, show=true) {
-  const el = document.getElementById('debugBox');
-  if (!el) return;
-  el.textContent = msg;
-  el.style.display = show ? 'block' : 'none';
-}
-
-// ── Vendor helpers ───────────────────────────────────────────────────────
-function isGiovana(r) {
-  const p = (get(r, 'criadoPor') || '').toLowerCase();
-  return p.includes('giovana');
-}
-function isLucas(r) {
-  const p = (get(r, 'criadoPor') || '').toLowerCase();
-  return p.includes('lucas') || p.includes('adrian') || p.includes('alysson');
-}
-
-// ── State ──────────────────────────────────────────────────────────────────
-let allData = [];
-let currentPeriod = 'month';
-let currentMonth = 'all';
-let currentVendor = 'all';
+// ── State ─────────────────────────────────────────────────────────────────
+let ALL = [];
+let vendor = 'all';
+let month  = 'all';
 let charts = {};
 
-// ── Column mapping — uses fuzzy matching against actual headers ───────────
-const COL_KEYS = {
-  data:         ['data'],
-  reunioes:     ['reuni'],
-  followup:     ['follow', 'follow-up'],
-  tentativas:   ['tentativ'],
-  semResposta:  ['sem resposta'],
-  novosLeads:   ['novos leads prospec'],
-  leadsCont:    ['entraram em contato'],
-  novosDiarios: ['novos leads di'],
-  naoResp:      ['chamaram e n'],
-  negociacoes:  ['negocia'],
-  fitClube:     ['fit clube', 'fit clue'],
-  speedTest:    ['speed'],
-  jumpTest:     ['jump'],
-  propostas:    ['propostas enviadas', 'q. de proposta', 'propostas'],
-  criadoPor:    ['criado por'],
+// ── Exact column names from your CSV ──────────────────────────────────────
+const C = {
+  data:      'Data',
+  reunioes:  'Reuniões Participou',
+  followup:  'Número de follow-up diário',
+  tentativas:'Tentativas de Prospecção',
+  leads:     'Novos leads prospectados',
+  leadsCont: 'Leads que entraram em contato',
+  negoc:     'Contatos diários (Negociações)',
+  fitClube:  'Contatos FIT CLUBE',
+  speedTest: 'Contatos Speed Test',
+  jumpTest:  'Contatos Jump Test',
+  propostas: 'Q. de propostas enviadas',
+  criado:    'Criado por',
 };
 
-// Will be populated after parsing headers
-const COL = {};
-
-function normalizeHeader(h) {
-  return h.toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9 .]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function buildColMap(headers) {
-  Object.keys(COL_KEYS).forEach(key => {
-    const keywords = COL_KEYS[key];
-    const match = headers.find(h => {
-      const norm = normalizeHeader(h);
-      return keywords.some(kw => norm.includes(kw));
-    });
-    COL[key] = match || null;
-  });
-  console.log('Column map:', COL);
-}
-
-// ── CSV Load ───────────────────────────────────────────────────────────────
-function loadCSVFile(input) {
+// ── File loader ───────────────────────────────────────────────────────────
+function loadFile(input) {
   const file = input.files[0];
   if (!file) return;
   document.getElementById('lastUpdate').textContent = 'Carregando...';
   const reader = new FileReader();
   reader.onload = e => {
-    const csv = e.target.result;
-    allData = parseCSV(csv);
-    if (!allData.length) {
-      document.getElementById('lastUpdate').textContent = 'Nenhum dado encontrado';
-      setDebug('Arquivo carregado mas sem dados reconhecidos.');
-      return;
-    }
-    document.getElementById('lastUpdate').textContent =
-      'Arquivo: ' + file.name + ' · ' + allData.length + ' registros · ' + new Date().toLocaleString('pt-BR');
-    setDebug('', false);
-    populateMonthFilter();
-    renderAll();
+    try {
+      ALL = parseCSV(e.target.result);
+      if (!ALL.length) { dbg('Arquivo vazio ou sem dados reconhecidos.'); return; }
+      document.getElementById('lastUpdate').textContent =
+        file.name + ' · ' + ALL.length + ' registros · ' + new Date().toLocaleString('pt-BR');
+      buildMonthFilter();
+      render();
+    } catch(err) { dbg('Erro ao processar: ' + err.message); }
   };
-  reader.onerror = () => setDebug('Erro ao ler o arquivo.');
+  reader.onerror = () => dbg('Erro ao ler o arquivo.');
   reader.readAsText(file, 'UTF-8');
 }
 
-function populateMonthFilter() {
-  const months = {};
-  allData.forEach(r => {
-    const d = parseDate(r[COL.data]);
-    if (!d) return;
-    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-    const label = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-    months[key] = label.charAt(0).toUpperCase() + label.slice(1);
-  });
-  const sel = document.getElementById('monthSelect');
-  sel.innerHTML = '<option value="all">Todos os meses</option>';
-  Object.keys(months).sort().reverse().forEach(k => {
-    sel.innerHTML += '<option value="' + k + '">' + months[k] + '</option>';
-  });
-  const now = new Date();
-  const curKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-  sel.value = months[curKey] ? curKey : Object.keys(months).sort().reverse()[0] || 'all';
-  currentMonth = sel.value;
-}
-
+// ── CSV parser ────────────────────────────────────────────────────────────
 function parseCSV(text) {
   const lines = text.trim().split('\n');
-  const headers = splitCSVLine(lines[0]);
-  buildColMap(headers);
-  // DEBUG — remove after fixing
-  const debugInfo = 'Headers encontrados:\n' + headers.join('\n') + '\n\nMapeamento:\n' + JSON.stringify(COL, null, 2);
-  console.log(debugInfo);
-  setDebug(debugInfo);
-  return lines.slice(1).map(line => {
-    const vals = splitCSVLine(line);
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = (vals[i] || '').trim(); });
-    return obj;
-  }).filter(r => COL.data && r[COL.data]);
+  const headers = splitLine(lines[0]);
+  return lines.slice(1)
+    .map(line => {
+      const vals = splitLine(line);
+      const obj = {};
+      headers.forEach((h, i) => obj[h.trim()] = (vals[i] || '').trim());
+      return obj;
+    })
+    .filter(r => r[C.data] && r[C.data].trim());
 }
 
-function splitCSVLine(line) {
-  const result = [];
-  let cur = '', inQ = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') { inQ = !inQ; }
-    else if (ch === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
-    else { cur += ch; }
+function splitLine(line) {
+  const res = []; let cur = '', inQ = false;
+  for (const ch of line) {
+    if (ch === '"') inQ = !inQ;
+    else if (ch === ',' && !inQ) { res.push(cur); cur = ''; }
+    else cur += ch;
   }
-  result.push(cur.trim());
-  return result;
+  res.push(cur);
+  return res;
 }
 
-function toNum(v) {
-  if (v === null || v === undefined) return 0;
-  return parseFloat(String(v).replace(',', '.')) || 0;
-}
-function get(row, key) {
-  if (!COL[key]) return '';
-  return row[COL[key]] || '';
-}
-
-// ── Filters ────────────────────────────────────────────────────────────────
-function getFiltered() {
-  let data = [...allData];
-
-  // Month filter
-  if (currentMonth !== 'all') {
-    data = data.filter(r => {
-      const d = parseDate(r[COL.data]);
-      if (!d) return false;
-      const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-      return key === currentMonth;
-    });
-  }
-
-  // Vendor filter
-  if (currentVendor === 'giovana') {
-    data = data.filter(r => isGiovana(r));
-  } else if (currentVendor === 'lucas') {
-    data = data.filter(r => isLucas(r));
-  }
-
-  // Period filter
-  if (currentPeriod !== 'all') {
-    const now = new Date();
-    data = data.filter(r => {
-      const d = parseDate(r[COL.data]);
-      if (!d) return false;
-      if (currentPeriod === 'month') {
-        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-      }
-      if (currentPeriod === 'week') {
-        const diff = (now - d) / (1000 * 60 * 60 * 24);
-        return diff >= 0 && diff <= 7;
-      }
-      return true;
-    });
-  }
-  return data;
-}
+function n(v) { return parseFloat(String(v||'0').replace(',','.')) || 0; }
 
 function parseDate(str) {
   if (!str) return null;
-  // Support DD/MM/YYYY
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(str.trim())) {
-    const [day, month, year] = str.trim().split('/');
-    return new Date(parseInt(year), parseInt(month)-1, parseInt(day));
-  }
+  // DD/MM/YYYY
+  const m = str.trim().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (m) return new Date(+m[3], +m[2]-1, +m[1]);
   const d = new Date(str);
   return isNaN(d) ? null : d;
 }
 
-function setMonth(val) {
-  currentMonth = val;
-  currentPeriod = 'all'; // reset period filter when month is selected
-  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
-  renderAll();
-}
+// ── Filters ───────────────────────────────────────────────────────────────
+function isGiovana(r) { return (r[C.criado]||'').toLowerCase().includes('giovana'); }
 
-function setPeriod(p, btn) {
-  currentPeriod = p;
-  currentMonth = 'all'; // reset month when period is selected
-  document.getElementById('monthSelect').value = 'all';
-  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderAll();
+function filtered() {
+  let d = [...ALL];
+  if (vendor === 'giovana') d = d.filter(r => isGiovana(r));
+  else if (vendor === 'outros') d = d.filter(r => !isGiovana(r));
+  if (month !== 'all') {
+    d = d.filter(r => {
+      const dt = parseDate(r[C.data]);
+      if (!dt) return false;
+      return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0') === month;
+    });
+  }
+  return d;
 }
 
 function setVendor(v, btn) {
-  currentVendor = v;
-  document.querySelectorAll('.vendor-btn').forEach(b => {
-    b.className = 'vendor-btn';
+  vendor = v;
+  document.querySelectorAll('.chip').forEach(b => {
+    b.classList.remove('on-all','on-g','on-l');
   });
-  if (v === 'all') btn.classList.add('active-all');
-  else if (v === 'giovana') btn.classList.add('active-g');
-  else btn.classList.add('active-l');
-  renderAll();
+  if (v==='all') btn.classList.add('on-all');
+  else if (v==='giovana') btn.classList.add('on-g');
+  else btn.classList.add('on-l');
+  render();
 }
 
-// ── Render all ─────────────────────────────────────────────────────────────
-function renderAll() {
-  if (!allData.length) return;
-  const data = getFiltered();
+function setMonth(v) { month = v; render(); }
+
+function buildMonthFilter() {
+  const months = {};
+  ALL.forEach(r => {
+    const d = parseDate(r[C.data]);
+    if (!d) return;
+    const key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    const label = d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+    months[key] = label.charAt(0).toUpperCase()+label.slice(1);
+  });
+  const sel = document.getElementById('monthSel');
+  sel.innerHTML = '<option value="all">Todos</option>';
+  Object.keys(months).sort().reverse().forEach(k => {
+    sel.innerHTML += `<option value="${k}">${months[k]}</option>`;
+  });
+  // Auto select most recent month
+  const recent = Object.keys(months).sort().reverse()[0];
+  if (recent) { sel.value = recent; month = recent; }
+}
+
+// ── Render ────────────────────────────────────────────────────────────────
+function render() {
+  const data = filtered();
   renderKPIs(data);
-  renderChartPropostas(data);
-  renderChartVendedores();
+  renderPropostas(data);
+  renderComparativo();
   renderFunil(data);
-  renderChartProdutos(data);
+  renderProdutos(data);
   renderRanking();
-  renderChartProspeccao(data);
+  renderFollowup(data);
 }
 
-// ── KPIs ───────────────────────────────────────────────────────────────────
+function sum(data, col) { return data.reduce((a,r) => a + n(r[col]), 0); }
+
+// ── KPIs ──────────────────────────────────────────────────────────────────
 function renderKPIs(data) {
-  const sum = k => data.reduce((a, r) => a + toNum(get(r, k)), 0);
-  const prosp   = sum('tentativas');
-  const prop    = sum('propostas');
-  const follow  = sum('followup');
-  const leads   = sum('novosLeads') || sum('novosDiarios');
-
-  document.getElementById('kpi-prosp').textContent  = prosp || '—';
-  document.getElementById('kpi-prop').textContent   = prop || '—';
-  document.getElementById('kpi-follow').textContent = follow || '—';
-  document.getElementById('kpi-leads').textContent  = leads || '—';
-  document.getElementById('kpi-conv').textContent   = prop ? Math.round((7/64)*100) + '%' : '—';
+  document.getElementById('k-reunioes').textContent  = sum(data, C.reunioes)  || '0';
+  document.getElementById('k-propostas').textContent = sum(data, C.propostas) || '0';
+  document.getElementById('k-followup').textContent  = sum(data, C.followup)  || '0';
+  document.getElementById('k-leads').textContent     = sum(data, C.leads)     || '0';
+  document.getElementById('k-dias').textContent      = data.length            || '0';
 }
 
-// ── Chart helpers ──────────────────────────────────────────────────────────
-const chartDefaults = {
-  plugins: { legend: { display: false } },
-  scales: {
-    x: { grid: { color: '#22222e' }, ticks: { color: '#555570', font: { family: 'DM Mono', size: 10 } } },
-    y: { grid: { color: '#22222e' }, ticks: { color: '#555570', font: { family: 'DM Mono', size: 10 } }, beginAtZero: true }
+// ── Chart helpers ─────────────────────────────────────────────────────────
+const BASE_OPTS = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{ legend:{ display:false } },
+  scales:{
+    x:{ grid:{color:'#22222e'}, ticks:{color:'#44445a',font:{family:'DM Mono',size:9}} },
+    y:{ grid:{color:'#22222e'}, ticks:{color:'#44445a',font:{family:'DM Mono',size:9}}, beginAtZero:true }
   }
 };
+function kill(id) { if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
+function grad(ctx,c1,c2,h=210){ const g=ctx.createLinearGradient(0,0,0,h); g.addColorStop(0,c1); g.addColorStop(1,c2); return g; }
 
-function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
-
-// ── Propostas por semana ───────────────────────────────────────────────────
-function renderChartPropostas(data) {
-  destroyChart('propostas');
+// ── Propostas por semana ──────────────────────────────────────────────────
+function renderPropostas(data) {
+  kill('prop');
   const weeks = {};
   data.forEach(r => {
-    const d = parseDate(r[COL.data]);
-    if (!d) return;
-    const wk = getWeekLabel(d);
-    weeks[wk] = (weeks[wk] || 0) + toNum(r[COL.propostas]);
+    const d = parseDate(r[C.data]); if(!d) return;
+    const jan1 = new Date(d.getFullYear(),0,1);
+    const wk = 'S' + Math.ceil(((d-jan1)/86400000 + jan1.getDay()+1)/7);
+    weeks[wk] = (weeks[wk]||0) + n(r[C.propostas]);
   });
-
   const labels = Object.keys(weeks).sort();
-  const vals   = labels.map(l => weeks[l]);
+  const ctx = document.getElementById('cPropostas').getContext('2d');
+  charts['prop'] = new Chart(ctx, { type:'line', data:{
+    labels, datasets:[{ data:labels.map(l=>weeks[l]),
+      borderColor:'#6c63ff', backgroundColor:grad(ctx,'rgba(108,99,255,.3)','rgba(108,99,255,0)'),
+      borderWidth:2, pointBackgroundColor:'#6c63ff', pointRadius:4, fill:true, tension:.4 }]
+  }, options:{...BASE_OPTS} });
+}
 
-  const ctx = document.getElementById('chartPropostas').getContext('2d');
-  const grad = ctx.createLinearGradient(0, 0, 0, 220);
-  grad.addColorStop(0, 'rgba(108,99,255,0.3)');
-  grad.addColorStop(1, 'rgba(108,99,255,0)');
-
-  charts['propostas'] = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        data: vals,
-        borderColor: '#6c63ff',
-        backgroundColor: grad,
-        borderWidth: 2,
-        pointBackgroundColor: '#6c63ff',
-        pointRadius: 4,
-        fill: true,
-        tension: 0.4
-      }]
-    },
-    options: { ...chartDefaults, responsive: true, maintainAspectRatio: false }
+// ── Comparativo Giovana vs Outros ─────────────────────────────────────────
+function renderComparativo() {
+  kill('comp');
+  const gData = ALL.filter(r => isGiovana(r));
+  const oData = ALL.filter(r => !isGiovana(r));
+  const labels = ['Reuniões','Follow-ups','Propostas','Leads'];
+  const g = [sum(gData,C.reunioes), sum(gData,C.followup), sum(gData,C.propostas), sum(gData,C.leads)];
+  const o = [sum(oData,C.reunioes), sum(oData,C.followup), sum(oData,C.propostas), sum(oData,C.leads)];
+  charts['comp'] = new Chart(document.getElementById('cComparativo').getContext('2d'), {
+    type:'bar', data:{ labels, datasets:[
+      { label:'Giovana', data:g, backgroundColor:'rgba(108,99,255,.75)', borderRadius:6 },
+      { label:'Outros',  data:o, backgroundColor:'rgba(255,101,132,.75)', borderRadius:6 },
+    ]},
+    options:{...BASE_OPTS, plugins:{ legend:{ display:true, labels:{color:'#8888aa',font:{family:'DM Mono',size:10},boxWidth:10} } }}
   });
 }
 
-function getWeekLabel(d) {
-  const jan1 = new Date(d.getFullYear(), 0, 1);
-  const wk = Math.ceil(((d - jan1) / 86400000 + jan1.getDay() + 1) / 7);
-  return `S${wk}`;
-}
-
-// ── Giovana vs Lucas ───────────────────────────────────────────────────────
-function renderChartVendedores() {
-  destroyChart('vendedores');
-
-  const gData = allData.filter(r => isGiovana(r));
-  const lData = allData.filter(r => isLucas(r));
-
-  const sum = (arr, k) => arr.reduce((a, r) => a + toNum(get(r, k)), 0);
-
-  const labels   = ['Prospecções', 'Follow-ups', 'Propostas', 'Leads'];
-  const giovana  = [sum(gData, 'tentativas'), sum(gData, 'followup'), sum(gData, 'propostas'), sum(gData, 'novosLeads')];
-  const lucas    = [sum(lData, 'tentativas'), sum(lData, 'followup'), sum(lData, 'propostas'), sum(lData, 'novosLeads')];
-
-  charts['vendedores'] = new Chart(
-    document.getElementById('chartVendedores').getContext('2d'), {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [
-          { label: 'Giovana', data: giovana, backgroundColor: 'rgba(108,99,255,0.7)', borderRadius: 6 },
-          { label: 'Lucas',   data: lucas,   backgroundColor: 'rgba(255,101,132,0.7)', borderRadius: 6 }
-        ]
-      },
-      options: {
-        ...chartDefaults,
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: true,
-            labels: { color: '#8888aa', font: { family: 'DM Mono', size: 10 }, boxWidth: 10 }
-          }
-        }
-      }
-    }
-  );
-}
-
-// ── Funil ──────────────────────────────────────────────────────────────────
+// ── Funil ─────────────────────────────────────────────────────────────────
 function renderFunil(data) {
-  const sum = k => data.reduce((a, r) => a + toNum(get(r, k)), 0);
-  const tentativas = sum('tentativas');
-  const leadsCont  = sum('leadsCont');
-  const negoc      = sum('negociacoes');
-  const props      = sum('propostas');
-  // Use leadsCont as top of funnel if tentativas is empty/zero
-  const topFunil   = tentativas > 0 ? tentativas : (leadsCont > 0 ? leadsCont : props);
-
   const steps = [
-    { label: 'Prospecções',   val: tentativas || topFunil, color: '#6c63ff' },
-    { label: 'Leads contato', val: Math.min(leadsCont, topFunil), color: '#8b5cf6' },
-    { label: 'Negociações',   val: Math.min(negoc, topFunil),     color: '#a78bfa' },
-    { label: 'Propostas',     val: Math.min(props, topFunil),     color: '#c4b5fd' },
+    { label:'Leads contato',  val:sum(data,C.leadsCont), color:'#6c63ff' },
+    { label:'Negociações',    val:sum(data,C.negoc),     color:'#8b5cf6' },
+    { label:'Propostas env.', val:sum(data,C.propostas), color:'#a78bfa' },
   ];
-
-  const max = Math.max(steps[0].val, 1);
-  const el  = document.getElementById('funil');
-  el.innerHTML = steps.map(s => `
-    <div class="funil-step">
-      <div class="funil-label">${s.label}</div>
-      <div class="funil-bar-wrap">
-        <div class="funil-bar" style="width:${Math.max((s.val/max)*100,4)}%;background:${s.color}">
-          <span class="funil-num">${s.val}</span>
+  const max = Math.max(...steps.map(s=>s.val), 1);
+  document.getElementById('funil').innerHTML = steps.map(s => `
+    <div class="fstep">
+      <div class="flabel">${s.label}</div>
+      <div class="fbar-wrap">
+        <div class="fbar" style="width:${Math.max(s.val/max*100,4)}%;background:${s.color}">
+          <span class="fnum">${s.val}</span>
         </div>
       </div>
-      <div class="funil-pct">${steps[0].val ? Math.round((s.val/steps[0].val)*100) : 0}%</div>
-    </div>
-  `).join('');
+      <div class="fpct">${max ? Math.round(s.val/steps[0].val*100) : 0}%</div>
+    </div>`).join('');
 }
 
-// ── Produtos ───────────────────────────────────────────────────────────────
-function renderChartProdutos(data) {
-  destroyChart('produtos');
-  const sum = k => data.reduce((a, r) => a + toNum(get(r, k)), 0);
-
-  charts['produtos'] = new Chart(
-    document.getElementById('chartProdutos').getContext('2d'), {
-      type: 'doughnut',
-      data: {
-        labels: ['Fit Clube', 'Speed Test', 'Jump Test'],
-        datasets: [{
-          data: [sum('fitClube'), sum('speedTest'), sum('jumpTest')],
-          backgroundColor: ['rgba(108,99,255,0.8)', 'rgba(255,101,132,0.8)', 'rgba(67,233,123,0.8)'],
-          borderColor: '#111118',
-          borderWidth: 3,
-          hoverOffset: 6
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '65%',
-        plugins: {
-          legend: {
-            display: true,
-            position: 'bottom',
-            labels: { color: '#8888aa', font: { family: 'DM Mono', size: 10 }, boxWidth: 10, padding: 16 }
-          }
-        }
-      }
-    }
-  );
+// ── Produtos ──────────────────────────────────────────────────────────────
+function renderProdutos(data) {
+  kill('prod');
+  charts['prod'] = new Chart(document.getElementById('cProdutos').getContext('2d'), {
+    type:'doughnut', data:{
+      labels:['Fit Clube','Speed Test','Jump Test'],
+      datasets:[{ data:[sum(data,C.fitClube), sum(data,C.speedTest), sum(data,C.jumpTest)],
+        backgroundColor:['rgba(108,99,255,.8)','rgba(255,101,132,.8)','rgba(67,233,123,.8)'],
+        borderColor:'#111118', borderWidth:3, hoverOffset:6 }]
+    },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'65%',
+      plugins:{ legend:{ display:true, position:'bottom',
+        labels:{color:'#8888aa',font:{family:'DM Mono',size:10},boxWidth:10,padding:14} } } }
+  });
 }
 
-// ── Ranking ────────────────────────────────────────────────────────────────
+// ── Ranking ───────────────────────────────────────────────────────────────
 function renderRanking() {
-  const gData = allData.filter(r => isGiovana(r));
-  const lData = allData.filter(r => isLucas(r));
-
-  const score = arr => arr.reduce((a, r) => a + toNum(get(r, 'propostas')), 0);
-  const gScore = score(gData);
-  const lScore = score(lData);
-
-  const vendors = [
-    { name: 'Giovana Gonçalves', score: gScore, color: '#6c63ff',
-      stats: `${gData.length} dias · ${gData.reduce((a,r)=>a+toNum(get(r,'followup')),0)} follow-ups` },
-    { name: 'Lucas Tomassoni', score: lScore, color: '#ff6584',
-      stats: `${lData.length} dias · ${lData.reduce((a,r)=>a+toNum(get(r,'followup')),0)} follow-ups` },
-  ].sort((a, b) => b.score - a.score);
-
-  const medals = ['🥇', '🥈'];
-  document.getElementById('ranking').innerHTML = vendors.map((v, i) => `
+  const byPerson = {};
+  ALL.forEach(r => {
+    const name = (r[C.criado]||'Desconhecido').trim();
+    if (!byPerson[name]) byPerson[name] = { propostas:0, followup:0, dias:0 };
+    byPerson[name].propostas += n(r[C.propostas]);
+    byPerson[name].followup  += n(r[C.followup]);
+    byPerson[name].dias++;
+  });
+  const sorted = Object.entries(byPerson).sort((a,b)=>b[1].propostas-a[1].propostas);
+  const medals = ['🥇','🥈','🥉'];
+  const colors = ['#6c63ff','#ff6584','#43e97b','#f9ca24'];
+  document.getElementById('ranking').innerHTML = sorted.map(([name,d],i) => `
     <div class="rank-item">
-      <div class="rank-pos">${medals[i]}</div>
+      <div class="rank-medal">${medals[i]||'·'}</div>
       <div class="rank-info">
-        <div class="rank-name">${v.name}</div>
-        <div class="rank-stats">${v.stats}</div>
+        <div class="rank-name">${name}</div>
+        <div class="rank-stats">${d.dias} dias · ${d.followup} follow-ups</div>
       </div>
-      <div class="rank-score" style="color:${v.color}">${v.score}</div>
-    </div>
-  `).join('');
+      <div class="rank-score" style="color:${colors[i]||'#8888aa'}">${d.propostas}</div>
+    </div>`).join('');
 }
 
-// ── Prospecção diária ──────────────────────────────────────────────────────
-function renderChartProspeccao(data) {
-  destroyChart('prospeccao');
-
+// ── Follow-up por dia ─────────────────────────────────────────────────────
+function renderFollowup(data) {
+  kill('fup');
   const byDay = {};
   data.forEach(r => {
-    const d = parseDate(r[COL.data]);
-    if (!d) return;
-    const key = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-    byDay[key] = (byDay[key] || 0) + toNum(get(r, 'tentativas'));
+    const d = parseDate(r[C.data]); if(!d) return;
+    const key = d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+    byDay[key] = (byDay[key]||0) + n(r[C.followup]);
   });
-
   const labels = Object.keys(byDay);
-  const vals   = labels.map(l => byDay[l]);
+  const ctx = document.getElementById('cFollowup').getContext('2d');
+  charts['fup'] = new Chart(ctx, { type:'line', data:{
+    labels, datasets:[{ data:labels.map(l=>byDay[l]),
+      borderColor:'#ff6584', backgroundColor:grad(ctx,'rgba(255,101,132,.3)','rgba(255,101,132,0)'),
+      borderWidth:2, pointBackgroundColor:'#ff6584', pointRadius:3, fill:true, tension:.3 }]
+  }, options:{...BASE_OPTS} });
+}
 
-  const ctx = document.getElementById('chartProspeccao').getContext('2d');
-  const grad2 = ctx.createLinearGradient(0, 0, 0, 220);
-  grad2.addColorStop(0, 'rgba(255,101,132,0.3)');
-  grad2.addColorStop(1, 'rgba(255,101,132,0)');
-
-  charts['prospeccao'] = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        data: vals,
-        borderColor: '#ff6584',
-        backgroundColor: grad2,
-        borderWidth: 2,
-        pointBackgroundColor: '#ff6584',
-        pointRadius: 3,
-        fill: true,
-        tension: 0.3
-      }]
-    },
-    options: { ...chartDefaults, responsive: true, maintainAspectRatio: false }
-  });
+// ── Debug ─────────────────────────────────────────────────────────────────
+function dbg(msg) {
+  const el = document.getElementById('debug');
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
+  document.getElementById('lastUpdate').textContent = 'Erro — veja detalhes abaixo';
 }
 </script>
 </body>

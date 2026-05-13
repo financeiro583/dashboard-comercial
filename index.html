@@ -515,7 +515,7 @@
   <header>
     <div class="brand">
       <span class="brand-tag">Vektor Fitness · Comercial</span>
-    <span style="font-family:'DM Mono',monospace;font-size:9px;color:#6c63ff;margin-top:2px;">v1.5</span>
+    <span style="font-family:'DM Mono',monospace;font-size:9px;color:#6c63ff;margin-top:2px;">v1.6</span>
       <h1>Dashboard <span>Comercial</span></h1>
     </div>
     <div class="header-right">
@@ -529,10 +529,10 @@
         </div>
       </div>
       <span class="last-update" id="lastUpdate">Nenhum dado carregado</span>
-      <div class="csv-input-bar">
-        <input type="text" id="csvUrl" placeholder="Cole o link CSV do Google Sheets aqui..." />
-        <button class="csv-btn" onclick="loadCSV()">Carregar</button>
-      </div>
+      <label class="csv-btn" style="cursor:pointer;display:inline-flex;align-items:center;gap:8px;">
+        📂 Importar CSV
+        <input type="file" id="csvFile" accept=".csv" onchange="loadCSVFile(this)" style="display:none;">
+      </label>
     </div>
   </header>
 
@@ -645,6 +645,16 @@ function setDebug(msg, show=true) {
   el.style.display = show ? 'block' : 'none';
 }
 
+// ── Vendor helpers ───────────────────────────────────────────────────────
+function isGiovana(r) {
+  const p = (get(r, 'criadoPor') || '').toLowerCase();
+  return p.includes('giovana');
+}
+function isLucas(r) {
+  const p = (get(r, 'criadoPor') || '').toLowerCase();
+  return p.includes('lucas') || p.includes('adrian') || p.includes('alysson');
+}
+
 // ── State ──────────────────────────────────────────────────────────────────
 let allData = [];
 let currentPeriod = 'month';
@@ -695,48 +705,27 @@ function buildColMap(headers) {
 }
 
 // ── CSV Load ───────────────────────────────────────────────────────────────
-function loadCSV() {
-  const url = document.getElementById('csvUrl').value.trim();
-  if (!url) { alert('Cole o link CSV do Google Sheets.'); return; }
+function loadCSVFile(input) {
+  const file = input.files[0];
+  if (!file) return;
   document.getElementById('lastUpdate').textContent = 'Carregando...';
-
-  // Extract sheet ID from URL — works with both /pub and /edit URLs
-  const idMatch = url.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-  const pubMatch = url.match(/spreadsheets\/d\/e\/([a-zA-Z0-9-_]+)/);
-
-  // Build multiple fallback URLs
-  const proxies = [
-    'https://corsproxy.io/?' + encodeURIComponent(url),
-    'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
-    'https://cors.sh/' + url,
-  ];
-
-  const tryFetch = (urls) => {
-    const [first, ...rest] = urls;
-    if (!first) return Promise.reject(new Error('all failed'));
-    return fetch(first)
-      .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
-      .catch(() => rest.length ? tryFetch(rest) : Promise.reject(new Error('all failed')));
+  const reader = new FileReader();
+  reader.onload = e => {
+    const csv = e.target.result;
+    allData = parseCSV(csv);
+    if (!allData.length) {
+      document.getElementById('lastUpdate').textContent = 'Nenhum dado encontrado';
+      setDebug('Arquivo carregado mas sem dados reconhecidos.');
+      return;
+    }
+    document.getElementById('lastUpdate').textContent =
+      'Arquivo: ' + file.name + ' · ' + allData.length + ' registros · ' + new Date().toLocaleString('pt-BR');
+    setDebug('', false);
+    populateMonthFilter();
+    renderAll();
   };
-
-  tryFetch(proxies)
-    .then(csv => {
-      if (!csv || csv.trim().startsWith('<')) throw new Error('not csv');
-      allData = parseCSV(csv);
-      if (!allData.length) {
-        document.getElementById('lastUpdate').textContent = 'Nenhum dado encontrado';
-        setDebug('CSV carregado mas sem dados. Verifique se a planilha tem dados.');
-        return;
-      }
-      document.getElementById('lastUpdate').textContent = 'Atualizado: ' + new Date().toLocaleString('pt-BR');
-      setDebug('', false);
-      populateMonthFilter();
-      renderAll();
-    })
-    .catch(err => {
-      document.getElementById('lastUpdate').textContent = 'Erro ao carregar';
-      setDebug('Erro: ' + err.message + '\n\nTente:\n1. Abrir a URL do CSV no navegador e ver se carrega\n2. Republicar a planilha (Arquivo → Publicar na web → Republicar)');
-    });
+  reader.onerror = () => setDebug('Erro ao ler o arquivo.');
+  reader.readAsText(file, 'UTF-8');
 }
 
 function populateMonthFilter() {
@@ -813,15 +802,9 @@ function getFiltered() {
 
   // Vendor filter
   if (currentVendor === 'giovana') {
-    data = data.filter(r => {
-      const p = (r[COL.criadoPor] || '').toLowerCase();
-      return p.includes('giovana') || p.includes('comercial') || p.includes('gonçalves') || p.includes('goncalves');
-    });
+    data = data.filter(r => isGiovana(r));
   } else if (currentVendor === 'lucas') {
-    data = data.filter(r => {
-      const p = (r[COL.criadoPor] || '').toLowerCase();
-      return p.includes('lucas') || p.includes('tomassoni');
-    });
+    data = data.filter(r => isLucas(r));
   }
 
   // Period filter
@@ -968,10 +951,8 @@ function getWeekLabel(d) {
 function renderChartVendedores() {
   destroyChart('vendedores');
 
-  const gFilter = r => { const p=(r[COL.criadoPor]||'').toLowerCase(); return p.includes('giovana')||p.includes('comercial')||p.includes('gonçalves')||p.includes('goncalves'); };
-  const lFilter = r => { const p=(r[COL.criadoPor]||'').toLowerCase(); return p.includes('lucas')||p.includes('tomassoni'); };
-  const gData = allData.filter(gFilter);
-  const lData = allData.filter(lFilter);
+  const gData = allData.filter(r => isGiovana(r));
+  const lData = allData.filter(r => isLucas(r));
 
   const sum = (arr, k) => arr.reduce((a, r) => a + toNum(get(r, k)), 0);
 
@@ -1072,10 +1053,8 @@ function renderChartProdutos(data) {
 
 // ── Ranking ────────────────────────────────────────────────────────────────
 function renderRanking() {
-  const gFilter = r => { const p=(r[COL.criadoPor]||'').toLowerCase(); return p.includes('giovana')||p.includes('comercial')||p.includes('gonçalves')||p.includes('goncalves'); };
-  const lFilter = r => { const p=(r[COL.criadoPor]||'').toLowerCase(); return p.includes('lucas')||p.includes('tomassoni'); };
-  const gData = allData.filter(gFilter);
-  const lData = allData.filter(lFilter);
+  const gData = allData.filter(r => isGiovana(r));
+  const lData = allData.filter(r => isLucas(r));
 
   const score = arr => arr.reduce((a, r) => a + toNum(get(r, 'propostas')), 0);
   const gScore = score(gData);

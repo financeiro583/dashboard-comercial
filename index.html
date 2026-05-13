@@ -729,6 +729,11 @@ function parseCSV(text) {
   const lines = text.trim().split('\n');
   const headers = splitCSVLine(lines[0]);
   buildColMap(headers);
+  // DEBUG — remove after fixing
+  const debugInfo = 'Headers encontrados:\n' + headers.join('\n') + '\n\nMapeamento:\n' + JSON.stringify(COL, null, 2);
+  console.log(debugInfo);
+  document.getElementById('debugBox').textContent = debugInfo;
+  document.getElementById('debugBox').style.display = 'block';
   return lines.slice(1).map(line => {
     const vals = splitCSVLine(line);
     const obj = {};
